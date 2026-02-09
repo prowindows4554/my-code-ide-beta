@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyCode IDE - Рабочий редактор</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.css">
+    <style>
+        /* Сброс и базовые стили */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', 'Cascadia Code', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Основной контейнер */
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Сайдбар */
+        .sidebar {
+            width: 260px;
+            background: #252526;
+            border-right: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            color: #858585;
+        }
+
+        .files-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .file-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .file-item:hover {
+            background: #2a2d2e;
+        }
+
+        .file-item.active {
+            background: #094771;
+        }
+
+        .add-file-btn {
+            background: #007acc;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            margin: 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .add-file-btn:hover {
+            background: #005a9e;
+        }
+
+        /* Основная область редактора */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Панель вкладок */
+        .tabs-bar {
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            overflow-x: auto;
+            height: 35px;
+            flex-shrink: 0;
+        }
+
+        .tab {
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-right: 1px solid #3e3e42;
+            cursor: pointer;
+            min-width: 120px;
+            background: #2d2d30;
+        }
+
+        .tab.active {
+            background: #1e1e1e;
+            color: #007acc;
+        }
+
+        .tab-close {
+            background: none;
+            border: none;
+            color: #858585;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 2px;
+        }
+
+        .tab-close:hover {
+            background: #3e3e42;
+        }
+
+        /* Редактор кода */
+        .editor-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        textarea.code-editor {
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 20px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        textarea.code-editor:focus {
+            outline: none;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #252526;
+            padding: 25px;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #3e3e42;
+        }
+
+        .modal-title {
+            margin-bottom: 15px;
+            color: #007acc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            color: #d4d4d4;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+
+        .modal-error {
+            color: #f14c4c;
+            font-size: 12px;
+            margin-bottom: 15px;
+            min-height: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-btn.primary {
+            background: #007acc;
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: #3e3e42;
+            color: #d4d4d4;
+        }
+
+        /* Контекстное меню */
+        .context-menu {
+            display: none;
+            position: absolute;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 3px;
+            min-width: 150px;
+            z-index: 1001;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .context-menu.active {
+            display: block;
+        }
+
+        .context-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .context-item:hover {
+            background: #2a2d2e;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 100;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .mobile-toggle {
+                display: block;
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                background: #007acc;
+                color: white;
+                border: none;
+                padding: 8px;
+                border-radius: 3px;
+                z-index: 99;
+                cursor: pointer;
+            }
+            
+            .tab {
+                min-width: 100px;
+                padding: 0 10px;
+            }
+        }
+
+        .mobile-toggle {
+            display: none;
+        }
+
+        /* Скроллбар */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3e3e42;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Кнопка мобильного меню -->
+    <button class="mobile-toggle" id="mobileToggle">
+        <i data-lucide="menu"></i>
+    </button>
+
+    <!-- Основной контейнер -->
+    <div class="container">
+        <!-- Сайдбар с файлами -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i data-lucide="folder"></i>
+                <span>ФАЙЛЫ</span>
+            </div>
+            
+            <div class="files-container" id="filesContainer">
+                <!-- Файлы будут здесь -->
+            </div>
+            
+            <button class="add-file-btn" id="addFileBtn" title="Новый файл">
+                <i data-lucide="plus"></i>
+            </button>
+        </div>
+
+        <!-- Основная область -->
+        <div class="main-area">
+            <!-- Панель вкладок -->
+            <div class="tabs-bar" id="tabsBar">
+                <!-- Вкладки будут здесь -->
+            </div>
+
+            <!-- Редактор кода -->
+            <div class="editor-wrapper">
+                <textarea 
+                    class="code-editor" 
+                    id="codeEditor"
+                    spellcheck="false"
+                    placeholder="// Начните писать код здесь..."
+                ></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания файла -->
+    <div class="modal" id="fileModal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <i data-lucide="file-plus"></i>
+                <span>НОВЫЙ ФАЙЛ</span>
+            </div>
+            <input type="text" class="modal-input" id="fileName" placeholder="script.js, style.css, index.html">
+            <div class="modal-error" id="modalError"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" id="cancelBtn">Отмена</button>
+                <button class="modal-btn primary" id="createBtn">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контекстное меню для файлов -->
+    <div class="context-menu" id="fileContextMenu">
+        <div class="context-item" data-action="open">
+            <i data-lucide="folder-open"></i>
+            <span>Открыть</span>
+        </div>
+        <div class="context-item" data-action="rename">
+            <i data-lucide="edit-2"></i>
+            <span>Переименовать</span>
+        </div>
+        <div class="context-item" data-action="delete">
+            <i data-lucide="trash-2"></i>
+            <span style="color: #f14c4c;">Удалить</span>
+        </div>
+    </div>
+
+    <!-- Контекстное меню для редактора -->
+    <div class="context-menu" id="editorContextMenu">
+        <div class="context-item" data-action="cut">
+            <i data-lucide="scissors"></i>
+            <span>Вырезать</span>
+        </div>
+        <div class="context-item" data-action="copy">
+            <i data-lucide="copy"></i>
+            <span>Копировать</span>
+        </div>
+        <div class="context-item" data-action="paste">
+            <i data-lucide="clipboard-paste"></i>
+            <span>Вставить</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+        // Инициализация иконок
+        lucide.createIcons();
+        
+        // Глобальные переменные
+        let files = JSON.parse(localStorage.getItem('mycode_files')) || [];
+        let currentFileId = localStorage.getItem('current_file_id') || null;
+        let longPressTimer = null;
+        let contextMenuTarget = null;
+        
+        // DOM элементы
+        const elements = {
+            sidebar: document.getElementById('sidebar'),
+            mobileToggle: document.getElementById('mobileToggle'),
+            filesContainer: document.getElementById('filesContainer'),
+            addFileBtn: document.getElementById('addFileBtn'),
+            tabsBar: document.getElementById('tabsBar'),
+            codeEditor: document.getElementById('codeEditor'),
+            fileModal: document.getElementById('fileModal'),
+            fileName: document.getElementById('fileName'),
+            modalError: document.getElementById('modalError'),
+            cancelBtn: document.getElementById('cancelBtn'),
+            createBtn: document.getElementById('createBtn'),
+            fileContextMenu: document.getElementById('fileContextMenu'),
+            editorContextMenu: document.getElementById('editorContextMenu')
+        };
+        
+        // Инициализация приложения
+        function init() {
+            // Загружаем файлы из LocalStorage
+            loadFiles();
+            
+            // Если нет файлов, создаем демо файлы
+            if (files.length === 0) {
+                createDemoFiles();
+            }
+            
+            // Назначаем обработчики событий
+            setupEventListeners();
+            
+            // Показываем первый файл
+            if (files.length > 0) {
+                const firstFile = files[0];
+                openFile(firstFile.id);
+            }
+            
+            updateUI();
+        }
+        
+        // Загрузка файлов
+        function loadFiles() {
+            const saved = localStorage.getItem('mycode_files');
+            if (saved) {
+                files = JSON.parse(saved);
+            }
+        }
+        
+        // Сохранение файлов
+        function saveFiles() {
+            localStorage.setItem('mycode_files', JSON.stringify(files));
+            localStorage.setItem('current_file_id', currentFileId);
+        }
+        
+        // Создание демо файлов
+        function createDemoFiles() {
+            const demoFiles = [
+                {
+                    id: generateId(),
+                    name: 'index.html',
+                    content: '<!DOCTYPE html>\n<html>\n<head>\n    <title>Мой сайт</title>\n</head>\n<body>\n    <h1>Привет!</h1>\n</body>\n</html>',
+                    lastModified: Date.now()
+                },
+                {
+                    id: generateId(),
+                    name: 'style.css',
+                    content: 'body {\n    font-family: Arial;\n    background: #f0f0f0;\n}',
+                    lastModified: Date.now()
+                },
+                {
+                    id: generateId(),
+                    name: 'script.js',
+                    content: 'console.log("Hello MyCode IDE!");\n\nfunction hello() {\n    alert("Привет!");\n}',
+                    lastModified: Date.now()
+                }
+            ];
+            
+            files = demoFiles;
+            saveFiles();
+        }
+        
+        // Генерация ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // Обновление интерфейса
+        function updateUI() {
+            updateFileList();
+            updateTabs();
+            updateEditor();
+        }
+        
+        // Обновление списка файлов
+        function updateFileList() {
+            elements.filesContainer.innerHTML = '';
+            
+            files.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                if (file.id === currentFileId) {
+                    div.classList.add('active');
+                }
+                
+                div.dataset.id = file.id;
+                div.dataset.name = file.name;
+                
+                // Определяем иконку по расширению
+                let icon = 'file';
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'html') icon = 'file-code';
+                else if (ext === 'js') icon = 'file-js';
+                else if (ext === 'css') icon = 'file-css';
+                else if (ext === 'json') icon = 'file-json';
+                
+                div.innerHTML = `
+                    <i data-lucide="${icon}"></i>
+                    <span>${file.name}</span>
+                `;
+                
+                // Обработчики
+                div.addEventListener('click', () => openFile(file.id));
+                setupContextMenu(div, 'file');
+                
+                elements.filesContainer.appendChild(div);
+            });
+            
+            lucide.createIcons();
+        }
+        
+        // Обновление вкладок
+        function updateTabs() {
+            elements.tabsBar.innerHTML = '';
+            
+            files.forEach(file => {
+                const tab = document.createElement('div');
+                tab.className = 'tab';
+                if (file.id === currentFileId) {
+                    tab.classList.add('active');
+                }
+                
+                tab.dataset.id = file.id;
+                
+                tab.innerHTML = `
+                    <span>${file.name}</span>
+                    <button class="tab-close" data-id="${file.id}">
+                        <i data-lucide="x" style="width: 12px; height: 12px;"></i>
+                    </button>
+                `;
+                
+                tab.addEventListener('click', (e) => {
+                    if (!e.target.closest('.tab-close')) {
+                        openFile(file.id);
+                    }
+                });
+                
+                // Кнопка закрытия вкладки
+                const closeBtn = tab.querySelector('.tab-close');
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeFile(file.id);
+                });
+                
+                elements.tabsBar.appendChild(tab);
+            });
+            
+            lucide.createIcons();
+        }
+        
+        // Обновление редактора
+        function updateEditor() {
+            if (currentFileId) {
+                const file = files.find(f => f.id === currentFileId);
+                if (file) {
+                    elements.codeEditor.value = file.content;
+                }
+            } else {
+                elements.codeEditor.value = '';
+            }
+        }
+        
+        // Открытие файла
+        function openFile(fileId) {
+            currentFileId = fileId;
+            updateUI();
+            saveFiles();
+        }
+        
+        // Закрытие файла (удаление из открытых вкладок)
+        function closeFile(fileId) {
+            if (fileId === currentFileId) {
+                // Находим следующий файл для открытия
+                const currentIndex = files.findIndex(f => f.id === fileId);
+                let nextFile = null;
+                
+                if (currentIndex < files.length - 1) {
+                    nextFile = files[currentIndex + 1];
+                } else if (currentIndex > 0) {
+                    nextFile = files[currentIndex - 1];
+                }
+                
+                if (nextFile) {
+                    openFile(nextFile.id);
+                } else {
+                    currentFileId = null;
+                    updateUI();
+                }
+            }
+        }
+        
+        // Создание нового файла
+        function createNewFile() {
+            elements.fileName.value = '';
+            elements.modalError.textContent = '';
+            elements.fileModal.classList.add('active');
+            elements.fileName.focus();
+        }
+        
+        // Проверка имени файла
+        function validateFileName(name) {
+            if (!name.trim()) {
+                return 'Введите имя файла';
+            }
+            
+            if (!name.includes('.')) {
+                return 'Добавьте расширение файла (например: script.js)';
+            }
+            
+            if (name.includes('/') || name.includes('\\')) {
+                return 'Недопустимые символы в имени файла';
+            }
+            
+            if (files.some(f => f.name === name)) {
+                return 'Файл с таким именем уже существует';
+            }
+            
+            return null;
+        }
+        
+        // Сохранение текущего файла
+        function saveCurrentFile() {
+            if (currentFileId) {
+                const file = files.find(f => f.id === currentFileId);
+                if (file) {
+                    file.content = elements.codeEditor.value;
+                    file.lastModified = Date.now();
+                    saveFiles();
+                }
+            }
+        }
+        
+        // Настройка контекстного меню
+        function setupContextMenu(element, type) {
+            // Десктоп
+            element.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e, type, element);
+            });
+            
+            // Мобильные
+            element.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    contextMenuTarget = { element, type };
+                    
+                    longPressTimer = setTimeout(() => {
+                        const touch = e.touches[0];
+                        const fakeEvent = {
+                            clientX: touch.clientX,
+                            clientY: touch.clientY,
+                            preventDefault: () => {}
+                        };
+                        showContextMenu(fakeEvent, type, element);
+                    }, 600);
+                }
+            });
+            
+            element.addEventListener('touchend', () => {
+                clearTimeout(longPressTimer);
+            });
+            
+            element.addEventListener('touchmove', () => {
+                clearTimeout(longPressTimer);
+            });
+        }
+        
+        // Показать контекстное меню
+        function showContextMenu(e, type, target) {
+            closeContextMenu();
+            
+            const menu = type === 'file' ? elements.fileContextMenu : elements.editorContextMenu;
+            contextMenuTarget = { element: target, type };
+            
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+            menu.classList.add('active');
+            
+            setTimeout(() => {
+                document.addEventListener('click', closeContextMenuOnClick);
+            }, 10);
+        }
+        
+        // Закрыть контекстное меню при клике
+        function closeContextMenuOnClick(e) {
+            if (!e.target.closest('.context-menu')) {
+                closeContextMenu();
+            }
+        }
+        
+        // Закрыть контекстное меню
+        function closeContextMenu() {
+            elements.fileContextMenu.classList.remove('active');
+            elements.editorContextMenu.classList.remove('active');
+            document.removeEventListener('click', closeContextMenuOnClick);
+        }
+        
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            // Редактор
+            elements.codeEditor.addEventListener('input', saveCurrentFile);
+            
+            // Кнопка нового файла
+            elements.addFileBtn.addEventListener('click', createNewFile);
+            
+            // Мобильное меню
+            elements.mobileToggle.addEventListener('click', () => {
+                elements.sidebar.classList.toggle('active');
+            });
+            
+            // Модальное окно
+            elements.cancelBtn.addEventListener('click', () => {
+                elements.fileModal.classList.remove('active');
+            });
+            
+            elements.createBtn.addEventListener('click', () => {
+                const fileName = elements.fileName.value.trim();
+                const error = validateFileName(fileName);
+                
+                if (error) {
+                    elements.modalError.textContent = error;
+                    return;
+                }
+                
+                const newFile = {
+                    id: generateId(),
+                    name: fileName,
+                    content: '// Новый файл\n',
+                    lastModified: Date.now()
+                };
+                
+                files.push(newFile);
+                saveFiles();
+                
+                elements.fileModal.classList.remove('active');
+                openFile(newFile.id);
+            });
+            
+            elements.fileName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    elements.createBtn.click();
+                }
+            });
+            
+            // Контекстное меню редактора
+            elements.codeEditor.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e, 'editor', elements.codeEditor);
+            });
+            
+            // Долгое нажатие на редакторе (мобильные)
+            elements.codeEditor.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    contextMenuTarget = { element: elements.codeEditor, type: 'editor' };
+                    
+                    longPressTimer = setTimeout(() => {
+                        const touch = e.touches[0];
+                        const fakeEvent = {
+                            clientX: touch.clientX,
+                            clientY: touch.clientY,
+                            preventDefault: () => {}
+                        };
+                        showContextMenu(fakeEvent, 'editor', elements.codeEditor);
+                    }, 600);
+                }
+            });
+            
+            elements.codeEditor.addEventListener('touchend', () => {
+                clearTimeout(longPressTimer);
+            });
+            
+            // Обработка действий контекстного меню
+            document.querySelectorAll('.context-item').forEach(item => {
+                item.addEventListener('click', async () => {
+                    const action = item.dataset.action;
+                    
+                    if (contextMenuTarget.type === 'file') {
+                        const fileId = contextMenuTarget.element.dataset.id;
+                        handleFileAction(action, fileId);
+                    } else {
+                        handleEditorAction(action);
+                    }
+                    
+                    closeContextMenu();
+                });
+            });
+            
+            // Горячие клавиши
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+S / Cmd+S - сохранить
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    saveCurrentFile();
+                    showMessage('Файл сохранен');
+                }
+                
+                // Ctrl+N / Cmd+N - новый файл
+                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    createNewFile();
+                }
+                
+                // Esc - закрыть модальное окно и контекстное меню
+                if (e.key === 'Escape') {
+                    elements.fileModal.classList.remove('active');
+                    closeContextMenu();
+                }
+            });
+            
+            // Закрытие сайдбара при клике вне его (мобильные)
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 &&
+                    !elements.sidebar.contains(e.target) &&
+                    e.target !== elements.mobileToggle) {
+                    elements.sidebar.classList.remove('active');
+                }
+            });
+        }
+        
+        // Обработка действий с файлами
+        function handleFileAction(action, fileId) {
+            const file = files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            switch (action) {
+                case 'open':
+                    openFile(fileId);
+                    break;
+                    
+                case 'rename':
+                    renameFile(fileId);
+                    break;
+                    
+                case 'delete':
+                    deleteFile(fileId);
+                    break;
+            }
+        }
+        
+        // Обработка действий редактора
+        async function handleEditorAction(action) {
+            switch (action) {
+                case 'copy':
+                    await navigator.clipboard.writeText(
+                        elements.codeEditor.value.substring(
+                            elements.codeEditor.selectionStart,
+                            elements.codeEditor.selectionEnd
+                        )
+                    );
+                    showMessage('Скопировано');
+                    break;
+                    
+                case 'cut':
+                    const selectedText = elements.codeEditor.value.substring(
+                        elements.codeEditor.selectionStart,
+                        elements.codeEditor.selectionEnd
+                    );
+                    await navigator.clipboard.writeText(selectedText);
+                    elements.codeEditor.setRangeText('');
+                    saveCurrentFile();
+                    showMessage('Вырезано');
+                    break;
+                    
+                case 'paste':
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        elements.codeEditor.setRangeText(text);
+                        saveCurrentFile();
+                        showMessage('Вставлено');
+                    } catch (err) {
+                        showMessage('Не удалось вставить текст');
+                    }
+                    break;
+            }
+        }
+        
+        // Переименование файла
+        function renameFile(fileId) {
+            const file = files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            const newName = prompt('Введите новое имя файла:', file.name);
+            if (!newName || newName === file.name) return;
+            
+            const error = validateFileName(newName);
+            if (error) {
+                alert(error);
+                return;
+            }
+            
+            file.name = newName;
+            saveFiles();
+            updateUI();
+            showMessage('Файл переименован');
+        }
+        
+        // Удаление файла
+        function deleteFile(fileId) {
+            const file = files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            if (confirm(`Удалить файл "${file.name}"?`)) {
+                files = files.filter(f => f.id !== fileId);
+                saveFiles();
+                
+                if (fileId === currentFileId) {
+                    currentFileId = files.length > 0 ? files[0].id : null;
+                }
+                
+                updateUI();
+                showMessage('Файл удален');
+            }
+        }
+        
+        // Показать сообщение (упрощенная версия)
+        function showMessage(text) {
+            console.log(text); // В реальном приложении можно сделать красивые уведомления
+        }
+        
+        // Запуск приложения
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
