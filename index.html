@@ -3,10 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyCode IDE - Рабочий редактор</title>
+    <title>🧪 MyCode IDE - Beta версия</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.css">
     <style>
-        /* Сброс и базовые стили */
+        /* БЕТА-БАННЕР */
+        .beta-banner {
+            background: linear-gradient(90deg, #ff6b6b, #ffa726, #51cf66);
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 3px solid #ff8a00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1000;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.9; }
+            50% { opacity: 1; }
+            100% { opacity: 0.9; }
+        }
+        
+        .beta-banner a {
+            color: white;
+            text-decoration: underline;
+            font-weight: bold;
+            margin-left: 10px;
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        
+        .beta-banner a:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        
+        /* Остальные стили остаются как были */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
@@ -17,13 +56,11 @@
             overflow: hidden;
         }
 
-        /* Основной контейнер */
         .container {
             display: flex;
-            height: 100vh;
+            height: calc(100vh - 50px); /* Учитываем баннер */
         }
 
-        /* Сайдбар */
         .sidebar {
             width: 260px;
             background: #252526;
@@ -88,7 +125,6 @@
             background: #005a9e;
         }
 
-        /* Основная область редактора */
         .main-area {
             flex: 1;
             display: flex;
@@ -96,7 +132,6 @@
             overflow: hidden;
         }
 
-        /* Панель вкладок */
         .tabs-bar {
             background: #2d2d30;
             border-bottom: 1px solid #3e3e42;
@@ -135,7 +170,6 @@
             background: #3e3e42;
         }
 
-        /* Редактор кода */
         .editor-wrapper {
             flex: 1;
             position: relative;
@@ -159,11 +193,6 @@
             overflow: auto;
         }
 
-        textarea.code-editor:focus {
-            outline: none;
-        }
-
-        /* Модальное окно */
         .modal {
             display: none;
             position: fixed;
@@ -239,7 +268,6 @@
             color: #d4d4d4;
         }
 
-        /* Контекстное меню */
         .context-menu {
             display: none;
             position: absolute;
@@ -267,12 +295,11 @@
             background: #2a2d2e;
         }
 
-        /* Мобильная адаптация */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 0;
+                top: 50px;
                 bottom: 0;
                 transform: translateX(-100%);
                 z-index: 100;
@@ -285,7 +312,7 @@
             .mobile-toggle {
                 display: block;
                 position: fixed;
-                top: 10px;
+                top: 70px; /* Ниже баннера */
                 left: 10px;
                 background: #007acc;
                 color: white;
@@ -300,13 +327,18 @@
                 min-width: 100px;
                 padding: 0 10px;
             }
+            
+            .beta-banner {
+                flex-wrap: wrap;
+                padding: 8px;
+                font-size: 12px;
+            }
         }
 
         .mobile-toggle {
             display: none;
         }
 
-        /* Скроллбар */
         ::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -320,9 +352,35 @@
             background: #3e3e42;
             border-radius: 5px;
         }
+        
+        /* Футер с версией */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 5px 10px;
+            font-size: 11px;
+            color: #858585;
+            border-top-left-radius: 5px;
+            z-index: 100;
+        }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false">
+    <!-- БЕТА-БАННЕР -->
+    <div class="beta-banner">
+        <i data-lucide="flask-conical"></i>
+        <strong>🧪 БЕТА-ВЕРСИЯ MyCode IDE v0.1.0</strong>
+        <span>Могут быть баги! Это нормально для беты!</span>
+        <a href="https://github.com/prowindows4554/my-code-ide-beta/issues" target="_blank">
+            <i data-lucide="bug"></i> Сообщить о баге
+        </a>
+        <a href="https://github.com/prowindows4554/my-code-ide-beta/discussions" target="_blank">
+            <i data-lucide="lightbulb"></i> Предложить идею
+        </a>
+    </div>
+
     <!-- Кнопка мобильного меню -->
     <button class="mobile-toggle" id="mobileToggle">
         <i data-lucide="menu"></i>
@@ -334,14 +392,14 @@
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <i data-lucide="folder"></i>
-                <span>ФАЙЛЫ</span>
+                <span>ФАЙЛЫ ПРОЕКТА</span>
             </div>
             
             <div class="files-container" id="filesContainer">
                 <!-- Файлы будут здесь -->
             </div>
             
-            <button class="add-file-btn" id="addFileBtn" title="Новый файл">
+            <button class="add-file-btn" id="addFileBtn" title="Создать новый файл">
                 <i data-lucide="plus"></i>
             </button>
         </div>
@@ -359,10 +417,15 @@
                     class="code-editor" 
                     id="codeEditor"
                     spellcheck="false"
-                    placeholder="// Начните писать код здесь..."
+                    placeholder="// Добро пожаловать в MyCode IDE Beta! 🚀\n// Создайте файл или начните писать код здесь...\n// Код автоматически сохраняется в LocalStorage\n// На мобильных: долгое нажатие для контекстного меню"
                 ></textarea>
             </div>
         </div>
+    </div>
+
+    <!-- Футер с версией -->
+    <div class="footer">
+        MyCode IDE Beta v0.1.0 | GitHub: prowindows4554/my-code-ide-beta
     </div>
 
     <!-- Модальное окно создания файла -->
@@ -370,7 +433,7 @@
         <div class="modal-content">
             <div class="modal-title">
                 <i data-lucide="file-plus"></i>
-                <span>НОВЫЙ ФАЙЛ</span>
+                <span>СОЗДАТЬ НОВЫЙ ФАЙЛ</span>
             </div>
             <input type="text" class="modal-input" id="fileName" placeholder="script.js, style.css, index.html">
             <div class="modal-error" id="modalError"></div>
@@ -419,8 +482,8 @@
         lucide.createIcons();
         
         // Глобальные переменные
-        let files = JSON.parse(localStorage.getItem('mycode_files')) || [];
-        let currentFileId = localStorage.getItem('current_file_id') || null;
+        let files = JSON.parse(localStorage.getItem('mycode_beta_files')) || [];
+        let currentFileId = localStorage.getItem('current_beta_file_id') || null;
         let longPressTimer = null;
         let contextMenuTarget = null;
         
@@ -443,18 +506,14 @@
         
         // Инициализация приложения
         function init() {
-            // Загружаем файлы из LocalStorage
             loadFiles();
             
-            // Если нет файлов, создаем демо файлы
             if (files.length === 0) {
                 createDemoFiles();
             }
             
-            // Назначаем обработчики событий
             setupEventListeners();
             
-            // Показываем первый файл
             if (files.length > 0) {
                 const firstFile = files[0];
                 openFile(firstFile.id);
@@ -463,39 +522,30 @@
             updateUI();
         }
         
-        // Загрузка файлов
         function loadFiles() {
-            const saved = localStorage.getItem('mycode_files');
+            const saved = localStorage.getItem('mycode_beta_files');
             if (saved) {
                 files = JSON.parse(saved);
             }
         }
         
-        // Сохранение файлов
         function saveFiles() {
-            localStorage.setItem('mycode_files', JSON.stringify(files));
-            localStorage.setItem('current_file_id', currentFileId);
+            localStorage.setItem('mycode_beta_files', JSON.stringify(files));
+            localStorage.setItem('current_beta_file_id', currentFileId);
         }
         
-        // Создание демо файлов
         function createDemoFiles() {
             const demoFiles = [
                 {
                     id: generateId(),
                     name: 'index.html',
-                    content: '<!DOCTYPE html>\n<html>\n<head>\n    <title>Мой сайт</title>\n</head>\n<body>\n    <h1>Привет!</h1>\n</body>\n</html>',
-                    lastModified: Date.now()
-                },
-                {
-                    id: generateId(),
-                    name: 'style.css',
-                    content: 'body {\n    font-family: Arial;\n    background: #f0f0f0;\n}',
+                    content: '<!DOCTYPE html>\n<html>\n<head>\n    <title>MyCode IDE Beta</title>\n</head>\n<body>\n    <h1>🚀 Welcome to Beta!</h1>\n</body>\n</html>',
                     lastModified: Date.now()
                 },
                 {
                     id: generateId(),
                     name: 'script.js',
-                    content: 'console.log("Hello MyCode IDE!");\n\nfunction hello() {\n    alert("Привет!");\n}',
+                    content: '// MyCode IDE Beta v0.1.0\nconsole.log("Hello Beta Testers! 🧪");\n\n// Code auto-saves to LocalStorage\n// Try creating new files!',
                     lastModified: Date.now()
                 }
             ];
@@ -504,19 +554,16 @@
             saveFiles();
         }
         
-        // Генерация ID
         function generateId() {
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
         
-        // Обновление интерфейса
         function updateUI() {
             updateFileList();
             updateTabs();
             updateEditor();
         }
         
-        // Обновление списка файлов
         function updateFileList() {
             elements.filesContainer.innerHTML = '';
             
@@ -530,7 +577,6 @@
                 div.dataset.id = file.id;
                 div.dataset.name = file.name;
                 
-                // Определяем иконку по расширению
                 let icon = 'file';
                 const ext = file.name.split('.').pop().toLowerCase();
                 if (ext === 'html') icon = 'file-code';
@@ -543,7 +589,6 @@
                     <span>${file.name}</span>
                 `;
                 
-                // Обработчики
                 div.addEventListener('click', () => openFile(file.id));
                 setupContextMenu(div, 'file');
                 
@@ -553,7 +598,6 @@
             lucide.createIcons();
         }
         
-        // Обновление вкладок
         function updateTabs() {
             elements.tabsBar.innerHTML = '';
             
@@ -579,7 +623,6 @@
                     }
                 });
                 
-                // Кнопка закрытия вкладки
                 const closeBtn = tab.querySelector('.tab-close');
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -592,7 +635,6 @@
             lucide.createIcons();
         }
         
-        // Обновление редактора
         function updateEditor() {
             if (currentFileId) {
                 const file = files.find(f => f.id === currentFileId);
@@ -604,17 +646,19 @@
             }
         }
         
-        // Открытие файла
         function openFile(fileId) {
             currentFileId = fileId;
             updateUI();
             saveFiles();
+            
+            // Закрываем сайдбар на мобильных
+            if (window.innerWidth <= 768) {
+                elements.sidebar.classList.remove('active');
+            }
         }
         
-        // Закрытие файла (удаление из открытых вкладок)
         function closeFile(fileId) {
             if (fileId === currentFileId) {
-                // Находим следующий файл для открытия
                 const currentIndex = files.findIndex(f => f.id === fileId);
                 let nextFile = null;
                 
@@ -633,7 +677,6 @@
             }
         }
         
-        // Создание нового файла
         function createNewFile() {
             elements.fileName.value = '';
             elements.modalError.textContent = '';
@@ -641,7 +684,6 @@
             elements.fileName.focus();
         }
         
-        // Проверка имени файла
         function validateFileName(name) {
             if (!name.trim()) {
                 return 'Введите имя файла';
@@ -662,7 +704,6 @@
             return null;
         }
         
-        // Сохранение текущего файла
         function saveCurrentFile() {
             if (currentFileId) {
                 const file = files.find(f => f.id === currentFileId);
@@ -674,15 +715,12 @@
             }
         }
         
-        // Настройка контекстного меню
         function setupContextMenu(element, type) {
-            // Десктоп
             element.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 showContextMenu(e, type, element);
             });
             
-            // Мобильные
             element.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     contextMenuTarget = { element, type };
@@ -708,7 +746,6 @@
             });
         }
         
-        // Показать контекстное меню
         function showContextMenu(e, type, target) {
             closeContextMenu();
             
@@ -724,34 +761,27 @@
             }, 10);
         }
         
-        // Закрыть контекстное меню при клике
         function closeContextMenuOnClick(e) {
             if (!e.target.closest('.context-menu')) {
                 closeContextMenu();
             }
         }
         
-        // Закрыть контекстное меню
         function closeContextMenu() {
             elements.fileContextMenu.classList.remove('active');
             elements.editorContextMenu.classList.remove('active');
             document.removeEventListener('click', closeContextMenuOnClick);
         }
         
-        // Настройка обработчиков событий
         function setupEventListeners() {
-            // Редактор
             elements.codeEditor.addEventListener('input', saveCurrentFile);
             
-            // Кнопка нового файла
             elements.addFileBtn.addEventListener('click', createNewFile);
             
-            // Мобильное меню
             elements.mobileToggle.addEventListener('click', () => {
                 elements.sidebar.classList.toggle('active');
             });
             
-            // Модальное окно
             elements.cancelBtn.addEventListener('click', () => {
                 elements.fileModal.classList.remove('active');
             });
@@ -768,7 +798,7 @@
                 const newFile = {
                     id: generateId(),
                     name: fileName,
-                    content: '// Новый файл\n',
+                    content: '// Новый файл - MyCode IDE Beta v0.1.0\n',
                     lastModified: Date.now()
                 };
                 
@@ -785,13 +815,11 @@
                 }
             });
             
-            // Контекстное меню редактора
             elements.codeEditor.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 showContextMenu(e, 'editor', elements.codeEditor);
             });
             
-            // Долгое нажатие на редакторе (мобильные)
             elements.codeEditor.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     contextMenuTarget = { element: elements.codeEditor, type: 'editor' };
@@ -812,7 +840,6 @@
                 clearTimeout(longPressTimer);
             });
             
-            // Обработка действий контекстного меню
             document.querySelectorAll('.context-item').forEach(item => {
                 item.addEventListener('click', async () => {
                     const action = item.dataset.action;
@@ -828,29 +855,24 @@
                 });
             });
             
-            // Горячие клавиши
             document.addEventListener('keydown', (e) => {
-                // Ctrl+S / Cmd+S - сохранить
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                     e.preventDefault();
                     saveCurrentFile();
-                    showMessage('Файл сохранен');
+                    showBetaMessage('💾 Файл сохранен!');
                 }
                 
-                // Ctrl+N / Cmd+N - новый файл
                 if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
                     e.preventDefault();
                     createNewFile();
                 }
                 
-                // Esc - закрыть модальное окно и контекстное меню
                 if (e.key === 'Escape') {
                     elements.fileModal.classList.remove('active');
                     closeContextMenu();
                 }
             });
             
-            // Закрытие сайдбара при клике вне его (мобильные)
             document.addEventListener('click', (e) => {
                 if (window.innerWidth <= 768 &&
                     !elements.sidebar.contains(e.target) &&
@@ -860,7 +882,6 @@
             });
         }
         
-        // Обработка действий с файлами
         function handleFileAction(action, fileId) {
             const file = files.find(f => f.id === fileId);
             if (!file) return;
@@ -880,7 +901,6 @@
             }
         }
         
-        // Обработка действий редактора
         async function handleEditorAction(action) {
             switch (action) {
                 case 'copy':
@@ -890,7 +910,7 @@
                             elements.codeEditor.selectionEnd
                         )
                     );
-                    showMessage('Скопировано');
+                    showBetaMessage('📋 Скопировано в буфер');
                     break;
                     
                 case 'cut':
@@ -901,7 +921,7 @@
                     await navigator.clipboard.writeText(selectedText);
                     elements.codeEditor.setRangeText('');
                     saveCurrentFile();
-                    showMessage('Вырезано');
+                    showBetaMessage('✂️ Вырезано');
                     break;
                     
                 case 'paste':
@@ -909,15 +929,14 @@
                         const text = await navigator.clipboard.readText();
                         elements.codeEditor.setRangeText(text);
                         saveCurrentFile();
-                        showMessage('Вставлено');
+                        showBetaMessage('📤 Вставлено из буфера');
                     } catch (err) {
-                        showMessage('Не удалось вставить текст');
+                        showBetaMessage('⚠️ Не удалось вставить');
                     }
                     break;
             }
         }
         
-        // Переименование файла
         function renameFile(fileId) {
             const file = files.find(f => f.id === fileId);
             if (!file) return;
@@ -927,17 +946,16 @@
             
             const error = validateFileName(newName);
             if (error) {
-                alert(error);
+                alert('Ошибка: ' + error);
                 return;
             }
             
             file.name = newName;
             saveFiles();
             updateUI();
-            showMessage('Файл переименован');
+            showBetaMessage(`✏️ Файл переименован в "${newName}"`);
         }
         
-        // Удаление файла
         function deleteFile(fileId) {
             const file = files.find(f => f.id === fileId);
             if (!file) return;
@@ -951,13 +969,13 @@
                 }
                 
                 updateUI();
-                showMessage('Файл удален');
+                showBetaMessage(`🗑️ Файл "${file.name}" удален`);
             }
         }
         
-        // Показать сообщение (упрощенная версия)
-        function showMessage(text) {
-            console.log(text); // В реальном приложении можно сделать красивые уведомления
+        function showBetaMessage(text) {
+            // Простое уведомление для беты
+            console.log('[MyCode IDE Beta]:', text);
         }
         
         // Запуск приложения
